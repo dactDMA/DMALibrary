@@ -143,122 +143,7 @@ bool Memory::SetFPGA()
 	return true;
 }
 
-bool Memory::Init(std::string process_name, bool memMap, bool debug)
-{
-	if (!DMA_INITIALIZED)
-	{
-		LOG("inizializing...\n");
-	reinit:
-		LPCSTR args[] = {const_cast<LPCSTR>(""), const_cast<LPCSTR>("-device"), const_cast<LPCSTR>("fpga://algo=0"), const_cast<LPCSTR>(""), const_cast<LPCSTR>(""), const_cast<LPCSTR>(""), const_cast<LPCSTR>("")};
-		DWORD argc = 3;
-		if (debug)
-		{
-			args[argc++] = const_cast<LPCSTR>("-v");
-			args[argc++] = const_cast<LPCSTR>("-printf");
-		}
-
-		std::string path = "";
-		if (memMap)
-		{
-			auto temp_path = std::filesystem::temp_directory_path();
-			path = (temp_path.string() + "\\mmap.txt");
-			bool dumped = false;
-			if (!std::filesystem::exists(path))
-				dumped = this->DumpMemoryMap(debug);
-			else
-				dumped = true;
-			LOG("dumping memory map to file...\n");
-			if (!dumped)
-			{
-				LOG("[!] ERROR: Could not dump memory map!\n");
-				LOG("Defaulting to no memory map!\n");
-			}
-			else
-			{
-				LOG("Dumped memory map!\n");
-
-				//Add the memory map to the arguments and increase arg count.
-				args[argc++] = const_cast<LPSTR>("-memmap");
-				args[argc++] = const_cast<LPSTR>(path.c_str());
-			}
-		}
-		this->vHandle = VMMDLL_Initialize(argc, args);
-		if (!this->vHandle)
-		{
-			if (memMap)
-			{
-				memMap = false;
-				LOG("[!] Initialization failed with Memory map? Try without MMap\n");
-				goto reinit;
-			}
-			LOG("[!] Initialization failed! Is the DMA in use or disconnected?\n");
-			return false;
-		}
-
-		ULONG64 FPGA_ID = 0, DEVICE_ID = 0;
-
-		VMMDLL_ConfigGet(this->vHandle, LC_OPT_FPGA_FPGA_ID, &FPGA_ID);
-		VMMDLL_ConfigGet(this->vHandle, LC_OPT_FPGA_DEVICE_ID, &DEVICE_ID);
-
-		LOG("FPGA ID: %llu\n", FPGA_ID);
-		LOG("DEVICE ID: %llu\n", DEVICE_ID);
-		LOG("success!\n");
-
-		if (!this->SetFPGA())
-		{
-			LOG("[!] Could not set FPGA!\n");
-			VMMDLL_Close(this->vHandle);
-			return false;
-		}
-
-		DMA_INITIALIZED = TRUE;
-	}
-	else
-		LOG("DMA already initialized!\n");
-
-	if (PROCESS_INITIALIZED)
-	{
-		LOG("Process already initialized!\n");
-		return true;
-	}
-
-	current_process.PID = GetPidFromName(process_name);
-	if (!current_process.PID)
-	{
-		LOG("[!] Could not get PID from name!\n");
-		return false;
-	}
-	current_process.process_name = process_name;
-	if (!mem.FixCr3())
-		std::cout << "Failed to fix CR3" << std::endl;
-	else
-		std::cout << "CR3 fixed" << std::endl;
-
-	current_process.base_address = GetBaseDaddy(process_name);
-	if (!current_process.base_address)
-	{
-		LOG("[!] Could not get base address!\n");
-		return false;
-	}
-
-	current_process.base_size = GetBaseSize(process_name);
-	if (!current_process.base_size)
-	{
-		LOG("[!] Could not get base size!\n");
-		return false;
-	}
-
-	LOG("Process information of %s\n", process_name.c_str());
-	LOG("PID: %i\n", current_process.PID);
-	LOG("Base Address: 0x%llx\n", current_process.base_address);
-	LOG("Base Size: 0x%llx\n", current_process.base_size);
-
-	PROCESS_INITIALIZED = TRUE;
-
-	return true;
-}
-
-bool Memory::Init(int pid, bool memMap, bool debug)
+bool Memory::InitDMA(bool memMap, bool debug)
 {
 	if (!DMA_INITIALIZED)
 	{
@@ -330,6 +215,58 @@ bool Memory::Init(int pid, bool memMap, bool debug)
 	}
 	else
 		LOG("DMA already initialized!\n");
+}
+
+bool Memory::InitProcess(std::string process_name, bool memMap, bool debug)
+{
+	InitDMA(memMap, debug);
+
+
+	if (PROCESS_INITIALIZED)
+	{
+		LOG("Process already initialized!\n");
+		return true;
+	}
+
+	current_process.PID = GetPidFromName(process_name);
+	if (!current_process.PID)
+	{
+		LOG("[!] Could not get PID from name!\n");
+		return false;
+	}
+	current_process.process_name = process_name;
+	if (!mem.FixCr3())
+		std::cout << "Failed to fix CR3" << std::endl;
+	else
+		std::cout << "CR3 fixed" << std::endl;
+
+	current_process.base_address = GetBaseDaddy(process_name);
+	if (!current_process.base_address)
+	{
+		LOG("[!] Could not get base address!\n");
+		return false;
+	}
+
+	current_process.base_size = GetBaseSize(process_name);
+	if (!current_process.base_size)
+	{
+		LOG("[!] Could not get base size!\n");
+		return false;
+	}
+
+	LOG("Process information of %s\n", process_name.c_str());
+	LOG("PID: %i\n", current_process.PID);
+	LOG("Base Address: 0x%llx\n", current_process.base_address);
+	LOG("Base Size: 0x%llx\n", current_process.base_size);
+
+	PROCESS_INITIALIZED = TRUE;
+
+	return true;
+}
+
+bool Memory::InitProcess(int pid, bool memMap, bool debug)
+{
+	InitDMA(memMap, debug);
 
 	if (PROCESS_INITIALIZED)
 	{

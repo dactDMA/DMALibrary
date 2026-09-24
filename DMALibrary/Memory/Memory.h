@@ -97,20 +97,30 @@ public:
 	/**
 	* brief Initializes the DMA
 	* This is required before any DMA operations can be done.
+	* @param memMap if true, will dump the memory map to a file	& make the DMA use it.
+	* @return true if successful, false if not.
+	*/
+	bool InitDMA(bool memMap = true, bool debug = false);
+
+	/**
+	* brief Initializes the process
+	* This is required before any process specific DMA operations can be done.
+	* If DMA is not initialized it will.
 	* @param process_name the name of the process
 	* @param memMap if true, will dump the memory map to a file	& make the DMA use it.
 	* @return true if successful, false if not.
 	*/
-	bool Init(std::string process_name, bool memMap = true, bool debug = false);
+	bool InitProcess(std::string process_name, bool memMap = true, bool debug = false);
 
 	/**
-	* brief Initializes the DMA
-	* This is required before any DMA operations can be done.
+	* brief Initializes the process
+	* This is required before any process specific DMA operations can be done.
+	* If DMA is not initialized it will.
 	* @param pid the process id of the process
 	* @param memMap if true, will dump the memory map to a file	& make the DMA use it.
 	* @return true if successful, false if not.
 	*/
-	bool Init(int pid, bool memMap = true, bool debug = false);
+	bool InitProcess(int pid, bool memMap = true, bool debug = false);
 
 	/*This part here is things related to the process information such as Base daddy, Size ect.*/
 
