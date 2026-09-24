@@ -103,6 +103,15 @@ public:
 	*/
 	bool Init(std::string process_name, bool memMap = true, bool debug = false);
 
+	/**
+	* brief Initializes the DMA
+	* This is required before any DMA operations can be done.
+	* @param pid the process id of the process
+	* @param memMap if true, will dump the memory map to a file	& make the DMA use it.
+	* @return true if successful, false if not.
+	*/
+	bool Init(int pid, bool memMap = true, bool debug = false);
+
 	/*This part here is things related to the process information such as Base daddy, Size ect.*/
 
 	/**
@@ -120,21 +129,27 @@ public:
 	std::vector<int> GetPidListFromName(std::string process_name);
 
 	/**
-	* \brief Gets the module list of the process
-	* \param process_name the name of the process 
-	* \return all the module names of the process 
+	* \brief Gets the module list of the current process
+	* \return all the module names of the current process 
 	*/
-	std::vector<std::string> GetModuleList(std::string process_name);
+	std::vector<std::string> GetModuleList();
 
 	/**
-	* \brief Gets the process information
-	* \return the process information
+	* \brief Gets the process information of current process
+	* \return the process information of current process
 	*/
 	VMMDLL_PROCESS_INFORMATION GetProcessInformation();
 
 	/**
-	* \brief Gets the process peb
-	* \return the process peb 
+	* \brief Gets the process information
+	* @param pid the id of the process
+	* \return the process information
+	*/
+	VMMDLL_PROCESS_INFORMATION GetProcessInformation(int pid);
+
+	/**
+	* \brief Gets the process peb of current process
+	* \return the process peb of current process
 	*/
 	PEB GetProcessPeb();
 
