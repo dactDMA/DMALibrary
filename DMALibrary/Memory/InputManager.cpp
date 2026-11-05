@@ -6,18 +6,13 @@
 //TODO: Restart winlogon.exe when it doesn't exist.
 bool c_keys::InitKeyboard()
 {
-	std::string win = registry.QueryValue("HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\CurrentBuild", e_registry_type::sz);
-	int Winver = 0;
-	if (!win.empty())
-		Winver = std::stoi(win);
-	else
+	ULONG64 Winver = 0;
+	if (!VMMDLL_ConfigGet(mem.vHandle, VMMDLL_OPT_WIN_VERSION_BUILD, &Winver) || Winver == 0)
+	{
+		LOG("[!] failed to get Windows build\n");
 		return false;
-	std::string ubr = registry.QueryValue("HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\UBR", e_registry_type::dword);
-	int Ubr = 0;
-	if (!ubr.empty())
-		Ubr = std::stoi(ubr);
-	else
-		return false;
+	}
+
 	this->win_logon_pid = mem.GetPidFromName("winlogon.exe");
 	if (Winver > 22000)
 	{
